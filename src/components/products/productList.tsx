@@ -1,12 +1,12 @@
 import React, { useState, useEffect, ChangeEvent, useRef } from "react";
-import ProductDataService from "../../service/productService";
-import IProductData from '../../types/IProduct';
+import ProductDataService from "service/productService";
+import IProductData from 'types/IProduct';
 const ProductsList: React.FC = () => {
     const [products, setProducts] = useState<Array<IProductData>>([]);
     const [currentProduct, setCurrentProduct] = useState<IProductData | null>(null);
     const [currentIndex, setCurrentIndex] = useState<number>(-1);
     const [searchTitle, setSearchTitle] = useState<string>("");
-    const [paginationCount, setPaginationCount] = useState<string>("");
+    const [paginationCount, setPaginationCount] = useState<number>(0);
     const [limit, setLimit] = useState<number>(3);
     const [totalPages, setTotalPages] = useState<Array<number>>([]);
     const allProducts = useRef<Array<IProductData>>([]);
@@ -20,18 +20,18 @@ const ProductsList: React.FC = () => {
         setProducts(allProducts.current.slice((page - 1) * limit, page * limit));
     }
 
-    const retrieveProducts = () => {
-        ProductDataService.getAll()
-            .then((response: any) => {
-                allProducts.current = response.data;
-                setPaginationCount(response.data.length)
-                setPagination(response.data.length, limit)
-                getPaginatedProducts(1);
-            })
-            .catch((e: Error) => {
-                console.log(e);
-            });
+    const retrieveProducts = async () => {
+        try {
+            const response = await ProductDataService.getAll();
+            allProducts.current = response.data;
+            setPaginationCount(response.data.length)
+            setPagination(response.data.length, limit)
+            getPaginatedProducts(1);
+        } catch (e) {
+            console.log(e);
+        }
     };
+
     const refreshList = () => {
         retrieveProducts();
         setCurrentProduct(null);

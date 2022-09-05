@@ -1,5 +1,5 @@
-import http from "../config/http-common";
-import IProductData from "../types/IProduct";
+import http from "config/http-common";
+import IProductData from "types/IProduct";
 const getAll = () => {
   return http.get<Array<IProductData>>("/products");
 };
