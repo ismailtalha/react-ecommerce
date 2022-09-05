@@ -1,33 +1,32 @@
-import React, { useState, useEffect, ChangeEvent } from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useEffect, ChangeEvent, useRef } from "react";
 import ProductDataService from "../../service/productService";
 import IProductData from '../../types/IProduct';
 const ProductsList: React.FC = () => {
-    const [Products, setProducts] = useState<Array<IProductData>>([]);
+    const [products, setProducts] = useState<Array<IProductData>>([]);
     const [currentProduct, setCurrentProduct] = useState<IProductData | null>(null);
     const [currentIndex, setCurrentIndex] = useState<number>(-1);
     const [searchTitle, setSearchTitle] = useState<string>("");
-    const [Paginationcount, setPaginationcount] = useState<string>("");
+    const [paginationCount, setPaginationCount] = useState<string>("");
     const [limit, setLimit] = useState<number>(3);
-    const [pagesTotal, setpagesTotal] = useState<Array<number>>([]);
-    var allProducts : Array<IProductData>= [];
-    useEffect(() => {
-        retrieveProducts();
-        // setLimit("5")
-    }, []);
+    const [totalPages, setTotalPages] = useState<Array<number>>([]);
+    const allProducts = useRef<Array<IProductData>>([]);
+
     const onChangeSearchTitle = (e: ChangeEvent<HTMLInputElement>) => {
         const searchTitle = e.target.value;
         setSearchTitle(searchTitle);
     };
+
+    const getPaginatedProducts = (page:number) => {
+        setProducts(allProducts.current.slice((page - 1) * limit, page * limit));
+    }
+
     const retrieveProducts = () => {
         ProductDataService.getAll()
             .then((response: any) => {
-                allProducts = response.data;
-                setProducts(response.data);
-                setPaginationcount(response.data.length)
+                allProducts.current = response.data;
+                setPaginationCount(response.data.length)
                 setPagination(response.data.length, limit)
                 getPaginatedProducts(1);
-                console.log(response.data);
             })
             .catch((e: Error) => {
                 console.log(e);
@@ -64,26 +63,20 @@ const ProductsList: React.FC = () => {
                 console.log(e);
             });
     };
-    const setPagination = (totalCount: string, limit: number) => {
-        let totalPagesCount = parseInt(totalCount) / limit;
-        let pagesarr = [];
-        for (let index = 0; index < totalPagesCount; index++) {
-            const page = index + 1
-            pagesarr.push(page)
-        }
-        setpagesTotal(pagesarr);
+    const setPagination = (totalCount: number, limit: number) => {
+          var pages = Math.ceil(totalCount / limit);
+          var pagesArray = [];
+          for (var i = 1; i <= pages; i++) {
+                pagesArray.push(i);
+          }
+          setTotalPages(pagesArray);
+    }
 
-    }
-    const getPaginatedProducts = (page:number) => {
-        debugger
-       let productsarr = allProducts;
-       let pageLimit = limit;
-       setProducts(productsarr.slice((page - 1) * pageLimit, page * pageLimit))
-       
-    }
-    
+    useEffect(() => {
+        retrieveProducts();
+    }, []);
+
     return (
-
         <div className="container">
             <div className="row">
                 <aside className="col-md-3">
@@ -255,8 +248,8 @@ const ProductsList: React.FC = () => {
                         </div>
                     </header>{/* sect-heading */}
                     <div className="row">
-                        {Products.map((data) => (
-                            <div className="col-md-4">
+                        {products.map((data, i:number) => (
+                            <div className="col-md-4" key={i}>
                                 <figure className="card card-product-grid">
                                     <div className="img-wrap">
                                         <img src={data.image} className="img-fluid" />
@@ -277,14 +270,16 @@ const ProductsList: React.FC = () => {
                             </div>
                         ))}
                     </div> {/* row end.// */}
-                    <h3>Pagination Count : {Paginationcount}</h3>
+                    <h3>Pagination Count : { paginationCount }</h3>
                     <h3>Limit : {limit}</h3>
 
                     <nav className="mt-4" aria-label="Page navigation sample">
                         <ul className="pagination">
-                            {pagesTotal.map((p) => (
+                            {totalPages.map((p, i: number) => (
                                 // <li>{p}</li>
-                                <li className="page-item active" onClick={() => getPaginatedProducts(p)}><a className="page-link" href="#">{p}</a></li>
+                                <li key={i} className="page-item active" onClick={() => getPaginatedProducts(p)}>
+                                    <a className="page-link" href="#">{p}</a>
+                                </li>
                             ))}
 
 
