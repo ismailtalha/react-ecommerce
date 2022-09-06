@@ -1,5 +1,5 @@
 import React, { useState, useEffect, ChangeEvent, useRef } from "react";
-import ProductDataService from "service/productService";
+import {findProductsByTitle, getProducts, removeAll} from 'api/products';
 import IProductData from 'types/IProduct';
 const ProductsList: React.FC = () => {
     const [products, setProducts] = useState<Array<IProductData>>([]);
@@ -22,7 +22,7 @@ const ProductsList: React.FC = () => {
 
     const retrieveProducts = async () => {
         try {
-            const response = await ProductDataService.getAll();
+            const response = await getProducts();
             allProducts.current = response.data;
             setPaginationCount(response.data.length)
             setPagination(response.data.length, limit)
@@ -42,7 +42,7 @@ const ProductsList: React.FC = () => {
         setCurrentIndex(index);
     };
     const removeAllProducts = () => {
-        ProductDataService.removeAll()
+        removeAll()
             .then((response: any) => {
                 console.log(response.data);
                 refreshList();
@@ -52,7 +52,7 @@ const ProductsList: React.FC = () => {
             });
     };
     const findByTitle = () => {
-        ProductDataService.findByTitle(searchTitle)
+        findProductsByTitle(searchTitle)
             .then((response: any) => {
                 setProducts(response.data);
                 setCurrentProduct(null);
