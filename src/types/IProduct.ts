@@ -1,10 +1,10 @@
-export default interface ITutorialData {
+export default interface IProductData {
     id?: any | null,
     title: string,
     description: string,
     published?: boolean,
     image: string,
     category: string,
-    price:string
+    price: string
 
 }

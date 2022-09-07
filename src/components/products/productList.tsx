@@ -1,6 +1,7 @@
 import React, { useState, useEffect, ChangeEvent, useRef } from "react";
-import {findProductsByTitle, getProducts, removeAll} from 'api/products';
+import { findProductsByTitle, getProducts, removeAll } from 'api/products';
 import IProductData from 'types/IProduct';
+import cart from '../../assets/icons/cart.png'
 const ProductsList: React.FC = () => {
     const [products, setProducts] = useState<Array<IProductData>>([]);
     const [currentProduct, setCurrentProduct] = useState<IProductData | null>(null);
@@ -10,13 +11,18 @@ const ProductsList: React.FC = () => {
     const [limit, setLimit] = useState<number>(3);
     const [totalPages, setTotalPages] = useState<Array<number>>([]);
     const allProducts = useRef<Array<IProductData>>([]);
+    const [filtertext, setMessage] = useState('');
+    const [count, setcount] = useState(0);
+    const [cartcount, setcartCount] = useState(0);
+    let selectvalue = useRef("Price");
+    let cartCount = useRef(0);
 
     const onChangeSearchTitle = (e: ChangeEvent<HTMLInputElement>) => {
         const searchTitle = e.target.value;
         setSearchTitle(searchTitle);
     };
 
-    const getPaginatedProducts = (page:number) => {
+    const getPaginatedProducts = (page: number) => {
         setProducts(allProducts.current.slice((page - 1) * limit, page * limit));
     }
 
@@ -25,6 +31,8 @@ const ProductsList: React.FC = () => {
             const response = await getProducts();
             allProducts.current = response.data;
             setPaginationCount(response.data.length)
+            setcount(response.data.length)
+
             setPagination(response.data.length, limit)
             getPaginatedProducts(1);
         } catch (e) {
@@ -64,14 +72,59 @@ const ProductsList: React.FC = () => {
             });
     };
     const setPagination = (totalCount: number, limit: number) => {
-          var pages = Math.ceil(totalCount / limit);
-          var pagesArray = [];
-          for (var i = 1; i <= pages; i++) {
-                pagesArray.push(i);
-          }
-          setTotalPages(pagesArray);
+        var pages = Math.ceil(totalCount / limit);
+        var pagesArray = [];
+        for (var i = 1; i <= pages; i++) {
+            pagesArray.push(i);
+        }
+        setTotalPages(pagesArray);
+    }
+    const handleChange = (event: any) => {
+        let filterval = event.target.value
+        setMessage(filterval);
+        if (filterval != "") {
+            let products = allProducts.current.filter(p => p.title.toLocaleLowerCase().includes(event.target.value.toLocaleLowerCase()))
+            setProducts(products);
+            setcount(products.length)
+        }
+        else {
+            getPaginatedProducts(1)
+            setcount(allProducts.current.length)
+        }
+    };
+    const handleSelect = (e: any) => {
+        console.log(e.target.value);
+        selectvalue.current = e.target.value;
+    }
+    const getSortedProducts = (order: number) => {
+
+        let key: any = selectvalue.current;
+        let sortedarray:Array<IProductData> = [];
+        
+        if (key == "Price" && order == 1) {
+            sortedarray = allProducts.current.sort((a, b) => parseFloat(a.price) - parseFloat(b.price) )
+        }
+        else if(key == "Price" && order == 2){
+            sortedarray = allProducts.current.sort((a, b) => parseFloat(b.price) - parseFloat(a.price))
+            
+        }
+        else if(key == "Title" && order == 1){
+            sortedarray = allProducts.current.sort((a, b) => a.title.localeCompare(b.title))
+        }
+        else if(key == "Title" && order == 2){
+            sortedarray = allProducts.current.sort((a, b) => b.title.localeCompare(a.title))
+        }
+        setProducts(sortedarray)
+       // allProducts.current = sortedarray;
+        getPaginatedProducts(1)
+
+
     }
 
+    const updateCartCount = () => {
+        cartCount.current =  cartCount.current  + 1 ;
+        setcartCount(cartCount.current)
+    }
     useEffect(() => {
         retrieveProducts();
     }, []);
@@ -79,176 +132,37 @@ const ProductsList: React.FC = () => {
     return (
         <div className="container">
             <div className="row">
-                <aside className="col-md-3">
-                    <div className="card">
-                        <article className="filter-group">
-                            <header className="card-header">
-                                <a href="#" data-toggle="collapse" data-target="#collapse_1" aria-expanded="true" >
-                                    <i className="icon-control fa fa-chevron-down" />
-                                    <h6 className="title">Product type</h6>
-                                </a>
-                            </header>
-                            <div className="filter-content collapse show" id="collapse_1" style={{}}>
-                                <div className="card-body">
-                                    <form className="pb-3">
-                                        <div className="input-group">
-                                            <input type="text" className="form-control" placeholder="Search" />
-                                            <div className="input-group-append">
-                                                <button className="btn btn-light" type="button"><i className="fa fa-search" /></button>
-                                            </div>
-                                        </div>
-                                    </form>
-                                    <ul className="list-menu">
-                                        <li><a href="#">People</a></li>
-                                        <li><a href="#">Watches </a></li>
-                                        <li><a href="#">Cinema</a></li>
-                                        <li><a href="#">Clothes</a></li>
-                                        <li><a href="#">Home items </a></li>
-                                        <li><a href="#">Animals</a></li>
-                                        <li><a href="#">People </a></li>
-                                    </ul>
-                                </div> {/* card-body.// */}
-                            </div>
-                        </article> {/* filter-group  .// */}
-                        <article className="filter-group">
-                            <header className="card-header">
-                                <a href="#" data-toggle="collapse" data-target="#collapse_2" aria-expanded="true" >
-                                    <i className="icon-control fa fa-chevron-down" />
-                                    <h6 className="title">Brands </h6>
-                                </a>
-                            </header>
-                            <div className="filter-content collapse show" id="collapse_2" style={{}}>
-                                <div className="card-body">
-                                    <label className="custom-control custom-checkbox">
-                                        <input type="checkbox" defaultChecked className="custom-control-input" />
-                                        <div className="custom-control-label">Mercedes
-                                            <b className="badge badge-pill badge-light float-right">120</b></div>
-                                    </label>
-                                    <label className="custom-control custom-checkbox">
-                                        <input type="checkbox" defaultChecked className="custom-control-input" />
-                                        <div className="custom-control-label">Toyota
-                                            <b className="badge badge-pill badge-light float-right">15</b></div>
-                                    </label>
-                                    <label className="custom-control custom-checkbox">
-                                        <input type="checkbox" defaultChecked className="custom-control-input" />
-                                        <div className="custom-control-label">Mitsubishi
-                                            <b className="badge badge-pill badge-light float-right">35</b> </div>
-                                    </label>
-                                    <label className="custom-control custom-checkbox">
-                                        <input type="checkbox" defaultChecked className="custom-control-input" />
-                                        <div className="custom-control-label">Nissan
-                                            <b className="badge badge-pill badge-light float-right">89</b> </div>
-                                    </label>
-                                    <label className="custom-control custom-checkbox">
-                                        <input type="checkbox" className="custom-control-input" />
-                                        <div className="custom-control-label">Honda
-                                            <b className="badge badge-pill badge-light float-right">30</b></div>
-                                    </label>
-                                </div> {/* card-body.// */}
-                            </div>
-                        </article> {/* filter-group .// */}
-                        <article className="filter-group">
-                            <header className="card-header">
-                                <a href="#" data-toggle="collapse" data-target="#collapse_3" aria-expanded="true" >
-                                    <i className="icon-control fa fa-chevron-down" />
-                                    <h6 className="title">Price range </h6>
-                                </a>
-                            </header>
-                            <div className="filter-content collapse show" id="collapse_3" style={{}}>
-                                <div className="card-body">
-                                    <input type="range" className="custom-range" min={0} max={100} />
-                                    <div className="form-row">
-                                        <div className="form-group col-md-6">
-                                            <label>Min</label>
-                                            <input className="form-control" placeholder="$0" type="number" />
-                                        </div>
-                                        <div className="form-group text-right col-md-6">
-                                            <label>Max</label>
-                                            <input className="form-control" placeholder="$1,0000" type="number" />
-                                        </div>
-                                    </div> {/* form-row.// */}
-                                    <button className="btn btn-block btn-primary">Apply</button>
-                                </div>{/* card-body.// */}
-                            </div>
-                        </article> {/* filter-group .// */}
-                        <article className="filter-group">
-                            <header className="card-header">
-                                <a href="#" data-toggle="collapse" data-target="#collapse_4" aria-expanded="true" >
-                                    <i className="icon-control fa fa-chevron-down" />
-                                    <h6 className="title">Sizes </h6>
-                                </a>
-                            </header>
-                            <div className="filter-content collapse show" id="collapse_4" style={{}}>
-                                <div className="card-body">
-                                    <label className="checkbox-btn">
-                                        <input type="checkbox" />
-                                        <span className="btn btn-light"> XS </span>
-                                    </label>
-                                    <label className="checkbox-btn">
-                                        <input type="checkbox" />
-                                        <span className="btn btn-light"> SM </span>
-                                    </label>
-                                    <label className="checkbox-btn">
-                                        <input type="checkbox" />
-                                        <span className="btn btn-light"> LG </span>
-                                    </label>
-                                    <label className="checkbox-btn">
-                                        <input type="checkbox" />
-                                        <span className="btn btn-light"> XXL </span>
-                                    </label>
-                                </div>{/* card-body.// */}
-                            </div>
-                        </article> {/* filter-group .// */}
-                        <article className="filter-group">
-                            <header className="card-header">
-                                <a href="#" data-toggle="collapse" data-target="#collapse_5" aria-expanded="false" >
-                                    <i className="icon-control fa fa-chevron-down" />
-                                    <h6 className="title">More filter </h6>
-                                </a>
-                            </header>
-                            <div className="filter-content collapse in" id="collapse_5" style={{}}>
-                                <div className="card-body">
-                                    <label className="custom-control custom-radio">
-                                        <input type="radio" name="myfilter_radio" defaultChecked className="custom-control-input" />
-                                        <div className="custom-control-label">Any condition</div>
-                                    </label>
-                                    <label className="custom-control custom-radio">
-                                        <input type="radio" name="myfilter_radio" className="custom-control-input" />
-                                        <div className="custom-control-label">Brand new </div>
-                                    </label>
-                                    <label className="custom-control custom-radio">
-                                        <input type="radio" name="myfilter_radio" className="custom-control-input" />
-                                        <div className="custom-control-label">Used items</div>
-                                    </label>
-                                    <label className="custom-control custom-radio">
-                                        <input type="radio" name="myfilter_radio" className="custom-control-input" />
-                                        <div className="custom-control-label">Very old</div>
-                                    </label>
-                                </div>{/* card-body.// */}
-                            </div>
-                        </article> {/* filter-group .// */}
-                    </div> {/* card.// */}
-                </aside>
-                <main className="col-md-9">
+               
+                <main className="col-md-12">
                     <header className="border-bottom mb-4 pb-3">
                         <div className="form-inline">
-                            <span className="mr-md-auto">32 Items found </span>
-                            <select className="mr-2 form-control">
-                                <option>Latest items</option>
-                                <option>Trending</option>
-                                <option>Most Popular</option>
-                                <option>Cheapest</option>
+                            <span className="mr-md-auto">{count} Items found </span>
+                            <span>Sort By:</span>
+                            <select className="mr-2 form-control" onChange={handleSelect}>
+                                <option>Price</option>
+                                <option>Title</option>
                             </select>
-                            <div className="btn-group">
-                                <a href="#" className="btn btn-outline-secondary" data-toggle="tooltip" data-original-title="List view">
+                            <button type="button" className="btn btn-primary btn-sm" onClick={() => getSortedProducts(1)}>Asc</button>
+                            <button type="button" className="btn btn-secondary btn-sm" onClick={() => getSortedProducts(2)}>Desc</button>
+                            <span><img src={cart} className="fa fa-bars" />{cartcount} </span>
+                            {/* <div className="btn-group">
+                                <a href="#" className="btn btn-outline-secondary" data-toggle="tooltip" data-original-title="List view" >
                                     <i className="fa fa-bars" /></a>
                                 <a href="#" className="btn  btn-outline-secondary active" data-toggle="tooltip" data-original-title="Grid view">
                                     <i className="fa fa-th" /></a>
-                            </div>
+                            </div> */}
                         </div>
                     </header>{/* sect-heading */}
+                    <input
+                        type="text"
+                        id="message"
+                        name="message"
+                        onChange={handleChange}
+                        value={filtertext}
+                    />
                     <div className="row">
-                        {products.map((data, i:number) => (
+
+                        {products.map((data, i: number) => (
                             <div className="col-md-4" key={i}>
                                 <figure className="card card-product-grid">
                                     <div className="img-wrap">
@@ -263,15 +177,16 @@ const ProductsList: React.FC = () => {
 
                                             </div> {/* price-wrap.// */}
                                         </div>
-                                        <a href="#" className="btn btn-block btn-primary">Add to cart </a>
+                                        <button className="btn btn-block btn-primary" onClick={() => updateCartCount()}>Add To Cart</button>
+                                        {/* <a href="#" className="btn btn-block btn-primary">Add to cart </a> */}
                                     </figcaption>
                                 </figure>
 
                             </div>
                         ))}
                     </div> {/* row end.// */}
-                    <h3>Pagination Count : { paginationCount }</h3>
-                    <h3>Limit : {limit}</h3>
+                    {/* <h3>Pagination Count : { paginationCount }</h3>
+                    <h3>Limit : {limit}</h3> */}
 
                     <nav className="mt-4" aria-label="Page navigation sample">
                         <ul className="pagination">
