@@ -52,7 +52,19 @@
 .img-wrap {
   overflow: hidden;
   position: relative;
-  width: 200px; /* You can set the dimensions to whatever you want */
+  width: 200px;
+  /* You can set the dimensions to whatever you want */
   height: 200px;
   object-fit: cover;
+}
+
+.img-res {
+  float: left;
+  width: auto !important;
+  height: 275px;
+  background-size: cover;
+}
+
+.pointerhand{
+  cursor: pointer;
 }
