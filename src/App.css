@@ -68,3 +68,12 @@
 .pointerhand{
   cursor: pointer;
 }
+.red-color{
+color:red !important
+}
+.display-hide{
+  display: hide;
+}
+.display-block{
+  display: block;
+}

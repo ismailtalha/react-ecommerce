@@ -8,7 +8,6 @@ const ProductsList: React.FC = () => {
     const [currentProduct, setCurrentProduct] = useState<IProductData | null>(null);
     const [currentIndex, setCurrentIndex] = useState<number>(-1);
     const [searchTitle, setSearchTitle] = useState<string>("");
-    const [paginationCount, setPaginationCount] = useState<number>(0);
     const [limit, setLimit] = useState<number>(3);
     const [totalPages, setTotalPages] = useState<Array<number>>([]);
     const allProducts = useRef<Array<IProductData>>([]);
@@ -20,6 +19,12 @@ const ProductsList: React.FC = () => {
     const [cartData, setcartData] = useState<Array<IProductData>>([]);
     let cartDataarr = useRef<Array<IProductData>>([]);
     let [totalPrice, settotalPrice] = useState(0)
+    let wishlistCount = useRef(0);
+    const [wishlistData, setwishlistData] = useState<Array<IProductData>>([]);
+    let wishlistDataarr = useRef<Array<IProductData>>([]);
+    const [wishlistcount, setwishlistcount] = useState(0);
+    const [checkSelected, setcheckSelected] = useState(0);
+
 
     const onChangeSearchTitle = (e: ChangeEvent<HTMLInputElement>) => {
         const searchTitle = e.target.value;
@@ -34,11 +39,9 @@ const ProductsList: React.FC = () => {
         try {
             const response = await getProducts();
             allProducts.current = response.data;
-            setPaginationCount(response.data.length)
             setcount(response.data.length)
-
             setPagination(response.data.length, limit)
-            getPaginatedProducts(1);
+            handleSelect(1)
         } catch (e) {
             console.log(e);
         }
@@ -97,8 +100,27 @@ const ProductsList: React.FC = () => {
         }
     };
     const handleSelect = (e: any) => {
-        console.log(e.target.value);
-        selectvalue.current = e.target.value;
+        debugger
+        let sortedarray: Array<IProductData> = [];
+        selectvalue.current = e.target ? e.target.value : "0";
+        if (selectvalue.current == "1") {
+            sortedarray = allProducts.current.sort((a, b) => a.title.localeCompare(b.title))
+        }
+        else if (selectvalue.current == "2") {
+            sortedarray = allProducts.current.sort((a, b) => b.title.localeCompare(a.title))
+        }
+        else if (selectvalue.current == "3") {
+            sortedarray = allProducts.current.sort((a, b) => parseFloat(b.price) - parseFloat(a.price))
+        }
+        else if (selectvalue.current == "4") {
+            sortedarray = allProducts.current.sort((a, b) => parseFloat(a.price) - parseFloat(b.price))
+        }
+        else {
+            sortedarray = allProducts.current.sort((a, b) => a.title.localeCompare(b.title))
+        }
+        setProducts(sortedarray)
+        // allProducts.current = sortedarray;
+        getPaginatedProducts(1)
     }
     const getSortedProducts = (order: number) => {
 
@@ -152,6 +174,62 @@ const ProductsList: React.FC = () => {
         console.log(total);
         settotalPrice(parseFloat(total.toFixed(2)))
         setcartData(cartDataarr.current)
+
+    }
+    const updateWishlistCount = (data: IProductData) => {
+        debugger
+        let index = wishlistDataarr.current.findIndex((a) => a.id == data.id)
+        if (index >= 0) {
+            data.activeIndex = 0;
+            removeWishlist(data);
+
+            return;
+        }
+        data.activeIndex = 1;
+        wishlistCount.current = wishlistCount.current + 1;
+        setwishlistcount(wishlistCount.current);
+        wishlistDataarr.current.push(data)
+
+        setwishlistData(wishlistDataarr.current)
+
+    }
+    const removeWishlist = (data: IProductData) => {
+        debugger
+        wishlistCount.current = wishlistCount.current ? wishlistCount.current - 1 : 0;
+        setwishlistcount(wishlistCount.current);
+        let index = wishlistDataarr.current.findIndex((a) => a.id == data.id)
+        wishlistDataarr.current.splice(index, 1);
+
+        setwishlistData(wishlistDataarr.current)
+
+    }
+    const priceFilter = async (event: any) => {
+        debugger
+        let checked = event.target.checked
+        const response = await getProducts();
+        allProducts.current = response.data;
+        if (checked && event.target.id == 1) {
+            setcheckSelected(1)
+            allProducts.current = allProducts.current.filter((a: IProductData) => parseFloat(a.price) >= 0 && parseFloat(a.price) < 500)
+        }
+        else if (checked && event.target.id == 2) {
+            setcheckSelected(2)
+            allProducts.current = allProducts.current.filter((a: IProductData) => parseFloat(a.price) >= 500 && parseFloat(a.price) < 2000)
+        }
+        else if (checked && event.target.id == 3) {
+            setcheckSelected(3)
+            allProducts.current = allProducts.current.filter((a: IProductData) => parseFloat(a.price) >= 2000)
+        }
+        else {
+            setcheckSelected(0)
+        }
+
+        setcount(allProducts.current.length)
+        setPagination(allProducts.current.length, limit)
+        handleSelect(1)
+
+        // setPaginationCount(filteredProducts.length)
+
 
     }
     useEffect(() => {
@@ -284,7 +362,7 @@ const ProductsList: React.FC = () => {
                                 <div className="top-left">
                                     <ul className="list-main">
                                         <li><i className="ti-headphone-alt"></i> +060 (800) 801-582</li>
-                                        <li><i className="ti-email"></i> support@shophub.com</li>
+                                        <li><i className="ti-email"></i> support@dealerz.com</li>
                                     </ul>
                                 </div>
                             </div>
@@ -292,9 +370,9 @@ const ProductsList: React.FC = () => {
                                 <div className="right-content">
                                     <ul className="list-main">
                                         <li><i className="ti-location-pin"></i> Store location</li>
-                                        <li><i className="ti-alarm-clock"></i> <a href="#">Daily deal</a></li>
-                                        <li><i className="ti-user"></i> <a href="#">My account</a></li>
-                                        <li><i className="ti-power-off"></i><a href="login.html#">Login</a></li>
+                                        <li><i className="ti-alarm-clock"></i> <a href="javascript:void(0)">Daily deal</a></li>
+                                        <li><i className="ti-user"></i> <a href="javascript:void(0)">My account</a></li>
+                                        <li><i className="ti-power-off"></i><a href="javascript:void(0)">Login</a></li>
                                     </ul>
                                 </div>
                             </div>
@@ -306,11 +384,11 @@ const ProductsList: React.FC = () => {
                         <div className="row">
                             <div className="col-lg-2 col-md-2 col-12">
                                 <div className="logo">
-                                    <a href="index.html"><img src="images/logo.png" alt="logo" /></a>
+                                    <a href="#"><img src="images/logo.png" alt="logo" /></a>
                                 </div>
 
                                 <div className="search-top">
-                                    <div className="top-search"><a href="#0"><i className="ti-search"></i></a></div>
+                                    <div className="top-search"><a href="javascript:void(0)"><i className="ti-search"></i></a></div>
                                     <div className="search-top">
                                         <form className="search-form">
                                             <input type="text" placeholder="Search here..." name="search" />
@@ -333,12 +411,31 @@ const ProductsList: React.FC = () => {
                             </div>
                             <div className="col-lg-2 col-md-3 col-12">
                                 <div className="right-bar">
-                                    <div className="sinlge-bar">
-                                        <a href="#" className="single-icon"><i className="fa fa-heart-o" aria-hidden="true"></i></a>
+                                    <div className="sinlge-bar shopping">
+                                        <a href="#" className="single-icon"><i className="fa fa-heart-o"></i> <span className="total-count">{wishlistcount}</span></a>
+                                        <div className="shopping-item">
+                                            <div className="dropdown-cart-header">
+                                                <span>{wishlistcount} Items</span>
+                                                <a href="#">View Wishlist</a>
+                                            </div>
+                                            <ul className="shopping-list">
+
+                                                {wishlistData.map((data: IProductData) => {
+                                                    return <li>
+                                                        <a href="#" className="remove" title="Remove this item"></a>
+                                                        <a className="cart-img" href="#"><img src={data.image} alt="#" /></a>
+                                                        <h4><a href="#">{data.title}</a></h4>
+                                                    </li>
+                                                })}
+
+                                            </ul>
+
+                                        </div>
                                     </div>
-                                    <div className="sinlge-bar">
+                                    {/* <div className="sinlge-bar">
                                         <a href="#" className="single-icon"><i className="fa fa-user-circle-o" aria-hidden="true"></i></a>
                                     </div>
+                                   */}
                                     <div className="sinlge-bar shopping">
                                         <a href="#" className="single-icon"><i className="ti-bag"></i> <span className="total-count">{cartcount}</span></a>
                                         <div className="shopping-item">
@@ -382,10 +479,10 @@ const ProductsList: React.FC = () => {
                                             <div className="navbar-collapse">
                                                 <div className="nav-inner">
                                                     <ul className="nav main-menu menu navbar-nav">
-                                                        <li className="active"><a href="#">Home</a></li>
-                                                        <li><a href="#">Product</a></li>
-                                                        <li><a href="#">Service</a></li>
-                                                        <li><a href="contact.html">Contact Us</a></li>
+                                                        <li ><a href="javascript:void(0)">Home</a></li>
+                                                        <li className="active"><a href="javascript:void(0)">Product</a></li>
+                                                        <li aria-disabled><a href="javascript:void(0)">Service</a></li>
+                                                        <li><a href="javascript:void(0)">Contact Us</a></li>
                                                     </ul>
                                                 </div>
                                             </div>
@@ -402,7 +499,7 @@ const ProductsList: React.FC = () => {
                     <div className="row">
                         <div className="col-lg-3 col-md-4 col-12">
                             <div className="shop-sidebar">
-                                <div className="single-widget category">
+                                {/* <div className="single-widget category">
                                     <h3 className="title">Categories</h3>
                                     <ul className="categor-list">
                                         <li><a href="#">T-shirts</a></li>
@@ -413,29 +510,32 @@ const ProductsList: React.FC = () => {
                                         <li><a href="#">kitwears</a></li>
                                         <li><a href="#">accessories</a></li>
                                     </ul>
-                                </div>
+                                </div> */}
 
                                 <div className="single-widget range">
                                     <h3 className="title">Shop by Price</h3>
                                     <div className="price-filter">
-                                        <div className="price-filter-inner">
+                                        {/* <div className="price-filter-inner">
                                             <div id="slider-range"></div>
                                             <div className="price_slider_amount">
                                                 <div className="label-input">
                                                     <span>Range:</span><input type="text" id="amount" name="price" placeholder="Add Your Price" />
                                                 </div>
                                             </div>
-                                        </div>
+                                        </div> */}
                                     </div>
                                     <ul className="check-box-list">
                                         <li>
-                                            <label className="checkbox-inline" ><input name="news" id="1" type="checkbox" />$20 - $50<span className="count">(3)</span></label>
+                                            <label className="checkbox-inline" ><input name="price" id="0" checked={checkSelected == 0 ? true : false} type="radio" onChange={(e) => { priceFilter(e) }} />No Price Filter</label>
                                         </li>
                                         <li>
-                                            <label className="checkbox-inline" ><input name="news" id="2" type="checkbox" />$50 - $100<span className="count">(5)</span></label>
+                                            <label className="checkbox-inline" ><input name="price" id="1" type="radio" checked={checkSelected == 1 ? true : false} onChange={(e) => { priceFilter(e) }} />$0 - $500</label>
                                         </li>
                                         <li>
-                                            <label className="checkbox-inline" ><input name="news" id="3" type="checkbox" />$100 - $250<span className="count">(8)</span></label>
+                                            <label className="checkbox-inline" ><input name="price" id="2" type="radio" checked={checkSelected == 2 ? true : false} onChange={(e) => { priceFilter(e) }} /> Above $500</label>
+                                        </li>
+                                        <li>
+                                            <label className="checkbox-inline" ><input name="price" id="3" type="radio" checked={checkSelected == 3 ? true : false} onChange={(e) => { priceFilter(e) }} />Above 2000 </label>
                                         </li>
                                     </ul>
                                 </div>
@@ -451,27 +551,33 @@ const ProductsList: React.FC = () => {
                                     <div className="shop-top">
                                         <div className="shop-shorter">
                                             <div className="single-shorter">
-                                                <label>Show :</label>
+                                                <label>Total Products : {count}</label>
+                                                {/* <label>Show :</label>
                                                 <select>
                                                     <option>09</option>
                                                     <option>15</option>
                                                     <option>25</option>
                                                     <option>30</option>
-                                                </select>
+                                                </select> */}
                                             </div>
-                                            <div className="single-shorter">
+                                            {/* <div className="single-shorter">
                                                 <label>Sort By :</label>
                                                 <select onChange={handleSelect}>
                                                     <option>Title</option>
                                                     <option>Price</option>
                                                 </select>
                                                 <button type="button" className="btn btn-primary btn-sm" onClick={() => getSortedProducts(1)}>Asc</button>
-        //                     <button type="button" className="btn btn-secondary btn-sm" onClick={() => getSortedProducts(2)}>Desc</button>
-                                            </div>
+        //                                      <button type="button" className="btn btn-secondary btn-sm" onClick={() => getSortedProducts(2)}>Desc</button>
+                                            </div> */}
                                         </div>
                                         <ul className="view-mode">
-                                            <li className="active"><a href="shop-grid.html"><i className="fa fa-th-large"></i></a></li>
-                                            <li><a href="shop-list.html"><i className="fa fa-th-list"></i></a></li>
+                                            <label>Sort By :</label>
+                                            <select onChange={handleSelect}>
+                                                <option value={1}>Title A - Z</option>
+                                                <option value={2}>Title Z - A</option>
+                                                <option value={3}>Price High to Low</option>
+                                                <option value={4}>Price Low to High</option>
+                                            </select>
                                         </ul>
                                     </div>
                                 </div>
@@ -488,8 +594,8 @@ const ProductsList: React.FC = () => {
                                                 <div className="button-head">
                                                     <div className="product-action">
                                                         <a data-toggle="modal" data-target="#exampleModal" title="Quick View" href="#"><i className=" ti-eye"></i><span>Quick Shop</span></a>
-                                                        <a title="Wishlist" href="#"><i className=" ti-heart "></i><span>Add to Wishlist</span></a>
-                                                        <a title="Compare" href="#"><i className="ti-bar-chart-alt"></i><span>Add to Compare</span></a>
+                                                        <a title="Wishlist" href="javascript:void(0)" onClick={() => updateWishlistCount(data)}><i className={data.activeIndex == 1 ? 'fa fa-heart red-color' : 'fa fa-heart-o red-color'}></i><span>Add to Wishlist</span></a>
+                                                        {/* <a title="Compare" href="#"><i className="ti-bar-chart-alt"></i><span>Add to Compare</span></a> */}
                                                     </div>
                                                     <div className="product-action-2">
                                                         <span title="Add to cart" onClick={() => updateCartCount(data)}>Add to cart</span>

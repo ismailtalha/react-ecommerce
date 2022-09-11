@@ -5,6 +5,7 @@ export default interface IProductData {
     published?: boolean,
     image: string,
     category: string,
-    price: string
+    price: string,
+    activeIndex:number
 
 }
